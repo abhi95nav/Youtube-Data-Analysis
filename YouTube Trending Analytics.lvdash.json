@@ -1,0 +1,2274 @@
+{
+  "datasets": [
+    {
+      "name": "category_scorecard",
+      "displayName": "Category Scorecard",
+      "queryLines": [
+        "SELECT\n",
+        "  *\n",
+        "FROM\n",
+        "  employeedatacatalog.gold_youtube.bc_category_scorecard\n",
+        "WHERE\n",
+        "  (\n",
+        "    array_contains(:sentiment, sentiment)\n",
+        "    OR cardinality(:sentiment) = 0\n",
+        "  )\n",
+        "  AND (\n",
+        "    array_contains(:category_name, category_name)\n",
+        "    OR cardinality(:category_name) = 0\n",
+        "  )"
+      ],
+      "parameters": [
+        {
+          "displayName": "Sentiment",
+          "keyword": "sentiment",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING"
+            }
+          }
+        },
+        {
+          "displayName": "Category",
+          "keyword": "category_name",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "publishing_strategy",
+      "displayName": "Publishing Strategy",
+      "queryLines": [
+        "SELECT\n",
+        "  *\n",
+        "FROM\n",
+        "  employeedatacatalog.gold_youtube.bc_publishing_strategy"
+      ]
+    },
+    {
+      "name": "tag_strategy",
+      "displayName": "Tag Strategy",
+      "queryLines": [
+        "SELECT\n",
+        "  *\n",
+        "FROM\n",
+        "  employeedatacatalog.gold_youtube.bc_tag_strategy\n",
+        "WHERE\n",
+        "  tag_popularity_rank <= 500\n",
+        "  AND (\n",
+        "    array_contains(:tag_tier, tag_tier)\n",
+        "    OR cardinality(:tag_tier) = 0\n",
+        "  )"
+      ],
+      "parameters": [
+        {
+          "displayName": "Tag Tier",
+          "keyword": "tag_tier",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "viral_breakouts",
+      "displayName": "Viral Breakouts",
+      "queryLines": [
+        "SELECT\n",
+        "  *\n",
+        "FROM\n",
+        "  employeedatacatalog.gold_youtube.bc_viral_breakouts\n",
+        "WHERE\n",
+        "  (\n",
+        "    array_contains(:peak_timing, peak_timing)\n",
+        "    OR cardinality(:peak_timing) = 0\n",
+        "  )"
+      ],
+      "parameters": [
+        {
+          "displayName": "Peak Timing",
+          "keyword": "peak_timing",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "channel_power",
+      "displayName": "Channel Power Rankings",
+      "queryLines": [
+        "SELECT\n",
+        "  *\n",
+        "FROM\n",
+        "  employeedatacatalog.gold_youtube.bc_channel_power_rankings\n",
+        "WHERE\n",
+        "  (\n",
+        "    array_contains(:channel_tier, channel_tier)\n",
+        "    OR cardinality(:channel_tier) = 0\n",
+        "  )\n",
+        "  AND (\n",
+        "    array_contains(:power_tier, power_tier)\n",
+        "    OR cardinality(:power_tier) = 0\n",
+        "  )"
+      ],
+      "parameters": [
+        {
+          "displayName": "Channel Tier",
+          "keyword": "channel_tier",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING"
+            }
+          }
+        },
+        {
+          "displayName": "Power Tier",
+          "keyword": "power_tier",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "leaderboard_monopoly",
+      "displayName": "Leaderboard Monopoly",
+      "queryLines": [
+        "SELECT\n",
+        "  trending_date,\n",
+        "  unique_channels,\n",
+        "  total_daily_views,\n",
+        "  top_channel_views,\n",
+        "  bottom_channel_views,\n",
+        "  view_concentration,\n",
+        "  top1_share_pct,\n",
+        "  monopoly_flag,\n",
+        "  is_high_monopoly\n",
+        "FROM\n",
+        "  (\n",
+        "    SELECT\n",
+        "      trending_date,\n",
+        "      unique_channels,\n",
+        "      total_daily_views,\n",
+        "      top_channel_views,\n",
+        "      bottom_channel_views,\n",
+        "      view_concentration,\n",
+        "      top1_share_pct,\n",
+        "      CASE\n",
+        "        WHEN top1_share_pct >= 40 THEN 'High Monopoly'\n",
+        "        WHEN top1_share_pct >= 25 THEN 'Moderate'\n",
+        "        ELSE 'Diverse'\n",
+        "      END AS monopoly_flag,\n",
+        "      CASE\n",
+        "        WHEN top1_share_pct >= 40 THEN 1\n",
+        "        ELSE 0\n",
+        "      END AS is_high_monopoly\n",
+        "    FROM\n",
+        "      (\n",
+        "        SELECT\n",
+        "          trending_date,\n",
+        "          COUNT(DISTINCT channel_key) AS unique_channels,\n",
+        "          SUM(daily_total_views) AS total_daily_views,\n",
+        "          MAX(daily_total_views) AS top_channel_views,\n",
+        "          MIN(daily_total_views) AS bottom_channel_views,\n",
+        "          CAST(\n",
+        "            ROUND(MAX(daily_total_views) / NULLIF(MIN(daily_total_views), 0), 1) AS DOUBLE\n",
+        "          ) AS view_concentration,\n",
+        "          CAST(\n",
+        "            ROUND(MAX(daily_total_views) * 100.0 / NULLIF(SUM(daily_total_views), 0), 1) AS DOUBLE\n",
+        "          ) AS top1_share_pct\n",
+        "        FROM\n",
+        "          employeedatacatalog.gold_youtube.channel_daily_leaderboard\n",
+        "        GROUP BY\n",
+        "          trending_date\n",
+        "      )\n",
+        "  )\n",
+        "ORDER BY\n",
+        "  trending_date"
+      ]
+    },
+    {
+      "name": "high_monopoly_count",
+      "displayName": "High Monopoly Count",
+      "queryLines": [
+        "SELECT\n",
+        "  trending_date,\n",
+        "  CAST(\n",
+        "    ROUND(MAX(daily_total_views) * 100.0 / NULLIF(SUM(daily_total_views), 0), 1) AS DOUBLE\n",
+        "  ) AS top1_share_pct\n",
+        "FROM\n",
+        "  employeedatacatalog.gold_youtube.channel_daily_leaderboard\n",
+        "GROUP BY\n",
+        "  trending_date\n",
+        "HAVING\n",
+        "  CAST(ROUND(MAX(daily_total_views) * 100.0 / NULLIF(SUM(daily_total_views), 0), 1) AS DOUBLE) >= 40"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "a31010e1",
+      "displayName": "Executive Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## YouTube Trending Analytics — Executive Overview"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_categories",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "category_scorecard",
+                  "fields": [
+                    {
+                      "name": "sum(total_trending_entries)",
+                      "expression": "SUM(`total_trending_entries`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Total Trending Entries",
+                "showTitle": true
+              },
+              "format": {
+                "numberFormat": {
+                  "formatType": "numeral",
+                  "format": "0,0"
+                }
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(total_trending_entries)",
+                  "displayName": "Entries"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_videos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "category_scorecard",
+                  "fields": [
+                    {
+                      "name": "sum(unique_videos)",
+                      "expression": "SUM(`unique_videos`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "format": {
+                "numberFormat": {
+                  "formatType": "numeral",
+                  "format": "0,0"
+                }
+              },
+              "frame": {
+                "title": "Total Unique Videos",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(unique_videos)",
+                  "displayName": "Unique Videos"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 1,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_channels",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "category_scorecard",
+                  "fields": [
+                    {
+                      "name": "sum(total_views)",
+                      "expression": "SUM(`total_views`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Total Views",
+                "showTitle": true
+              },
+              "format": {
+                "numberFormat": {
+                  "formatType": "numeral",
+                  "format": "0.0a"
+                }
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(total_views)",
+                  "displayName": "Views"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 1,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_best_day",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "category_scorecard",
+                  "fields": [
+                    {
+                      "name": "avg(avg_engagement_rate)",
+                      "expression": "AVG(`avg_engagement_rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Avg Engagement Rate",
+                "showTitle": true
+              },
+              "format": {
+                "numberFormat": {
+                  "formatType": "numeral",
+                  "format": "0.00"
+                }
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg(avg_engagement_rate)",
+                  "displayName": "Avg Engagement %"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 1,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "category_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "category_scorecard",
+                  "fields": [
+                    {
+                      "name": "category_name",
+                      "expression": "`category_name`"
+                    },
+                    {
+                      "name": "sentiment",
+                      "expression": "`sentiment`"
+                    },
+                    {
+                      "name": "size_tier",
+                      "expression": "`size_tier`"
+                    },
+                    {
+                      "name": "engagement_grade",
+                      "expression": "`engagement_grade`"
+                    },
+                    {
+                      "name": "sum(total_views)",
+                      "expression": "SUM(`total_views`)"
+                    },
+                    {
+                      "name": "avg(avg_engagement_rate)",
+                      "expression": "AVG(`avg_engagement_rate`)"
+                    },
+                    {
+                      "name": "avg(avg_like_ratio)",
+                      "expression": "AVG(`avg_like_ratio`)"
+                    },
+                    {
+                      "name": "avg(controversy_index)",
+                      "expression": "AVG(`controversy_index`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Category Scorecard"
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "category_name",
+                    "displayName": "Category"
+                  },
+                  {
+                    "fieldName": "sentiment",
+                    "displayName": "Sentiment"
+                  },
+                  {
+                    "fieldName": "size_tier",
+                    "displayName": "Size Tier"
+                  },
+                  {
+                    "fieldName": "engagement_grade",
+                    "displayName": "Grade"
+                  },
+                  {
+                    "fieldName": "sum(total_views)",
+                    "displayName": "Total Views"
+                  },
+                  {
+                    "fieldName": "avg(avg_engagement_rate)",
+                    "displayName": "Engagement %"
+                  },
+                  {
+                    "fieldName": "avg(avg_like_ratio)",
+                    "displayName": "Like Ratio"
+                  },
+                  {
+                    "fieldName": "avg(controversy_index)",
+                    "displayName": "Controversy"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 12,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "category_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "category_scorecard",
+                  "fields": [
+                    {
+                      "name": "engagement_grade",
+                      "expression": "`engagement_grade`"
+                    },
+                    {
+                      "name": "sum(total_views)",
+                      "expression": "SUM(`total_views`)"
+                    },
+                    {
+                      "name": "category_name",
+                      "expression": "`category_name`"
+                    }
+                  ],
+                  "cubeGroupingSets": {
+                    "sets": [
+                      {
+                        "fieldNames": [
+                          "engagement_grade"
+                        ]
+                      },
+                      {
+                        "fieldNames": [
+                          "category_name"
+                        ]
+                      }
+                    ]
+                  },
+                  "disaggregated": false,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "SUM(`total_views`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Category Performance by Views"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(total_views)",
+                  "displayName": "Total Views",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "category_name",
+                  "displayName": "Category",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "measure",
+                      "measure": {
+                        "fieldName": "sum(total_views)"
+                      }
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "engagement_grade",
+                  "displayName": "Grade",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 8,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "engagement_pie",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "category_scorecard",
+                  "fields": [
+                    {
+                      "name": "count(category_name)",
+                      "expression": "COUNT(`category_name`)"
+                    },
+                    {
+                      "name": "sentiment",
+                      "expression": "`sentiment`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Category Sentiment Distribution"
+              },
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "count(category_name)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Categories"
+                },
+                "color": {
+                  "fieldName": "sentiment",
+                  "displayName": "Sentiment",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 3,
+            "width": 4,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "content_tags",
+      "displayName": "Content & Tags",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Content & Tag Strategy"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "tag_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "tag_strategy",
+                  "fields": [
+                    {
+                      "name": "recommendation",
+                      "expression": "`recommendation`"
+                    },
+                    {
+                      "name": "sum(total_views)",
+                      "expression": "SUM(`total_views`)"
+                    },
+                    {
+                      "name": "tag_name",
+                      "expression": "`tag_name`"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`tag_popularity_rank` <= 20"
+                    }
+                  ],
+                  "cubeGroupingSets": {
+                    "sets": [
+                      {
+                        "fieldNames": [
+                          "recommendation"
+                        ]
+                      },
+                      {
+                        "fieldNames": [
+                          "tag_name"
+                        ]
+                      }
+                    ]
+                  },
+                  "disaggregated": false,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "SUM(`total_views`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Top Tags by Total Views"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(total_views)",
+                  "displayName": "Total Views",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "tag_name",
+                  "displayName": "Tag",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "measure",
+                      "measure": {
+                        "fieldName": "sum(total_views)"
+                      }
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "recommendation",
+                  "displayName": "Recommendation",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "tag_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "tag_strategy",
+                  "fields": [
+                    {
+                      "name": "min(tag_popularity_rank)",
+                      "expression": "MIN(`tag_popularity_rank`)"
+                    },
+                    {
+                      "name": "tag_name",
+                      "expression": "`tag_name`"
+                    },
+                    {
+                      "name": "tag_tier",
+                      "expression": "`tag_tier`"
+                    },
+                    {
+                      "name": "recommendation",
+                      "expression": "`recommendation`"
+                    },
+                    {
+                      "name": "sum(total_views)",
+                      "expression": "SUM(`total_views`)"
+                    },
+                    {
+                      "name": "avg(engagement_efficiency)",
+                      "expression": "AVG(`engagement_efficiency`)"
+                    },
+                    {
+                      "name": "avg(avg_engagement_rate)",
+                      "expression": "AVG(`avg_engagement_rate`)"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`recommendation` IN ('Must Use', 'Recommended', 'Hidden Gem')"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Tag Recommendations (Actionable)"
+              },
+              "rowsPerPage": 15,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "min(tag_popularity_rank)",
+                    "displayName": "#"
+                  },
+                  {
+                    "fieldName": "tag_name",
+                    "displayName": "Tag"
+                  },
+                  {
+                    "fieldName": "tag_tier",
+                    "displayName": "Tier"
+                  },
+                  {
+                    "fieldName": "recommendation",
+                    "displayName": "Recommendation"
+                  },
+                  {
+                    "fieldName": "sum(total_views)",
+                    "displayName": "Total Views"
+                  },
+                  {
+                    "fieldName": "avg(engagement_efficiency)",
+                    "displayName": "Efficiency"
+                  },
+                  {
+                    "fieldName": "avg(avg_engagement_rate)",
+                    "displayName": "Engagement %"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "tier_pie",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "tag_strategy",
+                  "fields": [
+                    {
+                      "name": "count(tag_name)",
+                      "expression": "COUNT(`tag_name`)"
+                    },
+                    {
+                      "name": "tag_tier",
+                      "expression": "`tag_tier`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Tag Tier Distribution"
+              },
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "count(tag_name)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Tags"
+                },
+                "color": {
+                  "fieldName": "tag_tier",
+                  "displayName": "Tag Tier",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 1,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_must_use",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "tag_strategy",
+                  "fields": [
+                    {
+                      "name": "count(tag_name)",
+                      "expression": "COUNT(`tag_name`)"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`recommendation` = 'Must Use'"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "\"Must Use\" Tags"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "count(tag_name)",
+                  "displayName": "Must Use"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 14,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_hidden_gem",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "tag_strategy",
+                  "fields": [
+                    {
+                      "name": "count(tag_name)",
+                      "expression": "COUNT(`tag_name`)"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`recommendation` = 'Hidden Gem'"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "\"Hidden Gem\" Tags"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "count(tag_name)",
+                  "displayName": "Hidden Gems"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 14,
+            "width": 3,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "virality_patterns",
+      "displayName": "Virality & Trending",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Virality & Trending Patterns"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "viral_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "viral_breakouts",
+                  "fields": [
+                    {
+                      "name": "peak_timing",
+                      "expression": "`peak_timing`"
+                    },
+                    {
+                      "name": "sum(max_daily_view_gain)",
+                      "expression": "SUM(`max_daily_view_gain`)"
+                    },
+                    {
+                      "name": "video_id",
+                      "expression": "`video_id`"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`virality_rank` <= 20"
+                    }
+                  ],
+                  "cubeGroupingSets": {
+                    "sets": [
+                      {
+                        "fieldNames": [
+                          "peak_timing"
+                        ]
+                      },
+                      {
+                        "fieldNames": [
+                          "video_id"
+                        ]
+                      }
+                    ]
+                  },
+                  "disaggregated": false,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "SUM(`max_daily_view_gain`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Top 20 Viral Videos by Daily View Gain"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(max_daily_view_gain)",
+                  "displayName": "Max Daily View Gain",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "video_id",
+                  "displayName": "Video ID",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "measure",
+                      "measure": {
+                        "fieldName": "sum(max_daily_view_gain)"
+                      }
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "peak_timing",
+                  "displayName": "Peak Timing",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 7,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "peak_pie",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "viral_breakouts",
+                  "fields": [
+                    {
+                      "name": "count(video_id)",
+                      "expression": "COUNT(`video_id`)"
+                    },
+                    {
+                      "name": "peak_timing",
+                      "expression": "`peak_timing`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Peak Timing Distribution"
+              },
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "count(video_id)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Videos"
+                },
+                "color": {
+                  "fieldName": "peak_timing",
+                  "displayName": "Peak Timing",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 7,
+            "y": 1,
+            "width": 5,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "publish_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "publishing_strategy",
+                  "fields": [
+                    {
+                      "name": "recommendation",
+                      "expression": "`recommendation`"
+                    },
+                    {
+                      "name": "day_name",
+                      "expression": "`day_name`"
+                    },
+                    {
+                      "name": "sum(composite_score)",
+                      "expression": "SUM(`composite_score`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Publishing Day Composite Score"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "day_name",
+                  "displayName": "Day",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(composite_score)",
+                  "displayName": "Composite Score",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "recommendation",
+                  "displayName": "Recommendation",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 7,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "publish_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "publishing_strategy",
+                  "fields": [
+                    {
+                      "name": "day_name",
+                      "expression": "`day_name`"
+                    },
+                    {
+                      "name": "min(day_rank)",
+                      "expression": "MIN(`day_rank`)"
+                    },
+                    {
+                      "name": "sum(composite_score)",
+                      "expression": "SUM(`composite_score`)"
+                    },
+                    {
+                      "name": "sum(view_score)",
+                      "expression": "SUM(`view_score`)"
+                    },
+                    {
+                      "name": "sum(engagement_score)",
+                      "expression": "SUM(`engagement_score`)"
+                    },
+                    {
+                      "name": "sum(speed_score)",
+                      "expression": "SUM(`speed_score`)"
+                    },
+                    {
+                      "name": "recommendation",
+                      "expression": "`recommendation`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Daily Publishing Scorecard"
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "day_name",
+                    "displayName": "Day"
+                  },
+                  {
+                    "fieldName": "min(day_rank)",
+                    "displayName": "Rank"
+                  },
+                  {
+                    "fieldName": "sum(composite_score)",
+                    "displayName": "Composite"
+                  },
+                  {
+                    "fieldName": "sum(view_score)",
+                    "displayName": "Views"
+                  },
+                  {
+                    "fieldName": "sum(engagement_score)",
+                    "displayName": "Engagement"
+                  },
+                  {
+                    "fieldName": "sum(speed_score)",
+                    "displayName": "Speed"
+                  },
+                  {
+                    "fieldName": "recommendation",
+                    "displayName": "Verdict"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 7,
+            "y": 8,
+            "width": 5,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "global_filters",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "category_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661c95c195c9f2ac5d411c303a8_category_name",
+                "query": {
+                  "datasetName": "category_scorecard",
+                  "fields": [
+                    {
+                      "name": "category_name",
+                      "expression": "`category_name`"
+                    },
+                    {
+                      "name": "category_name_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661c95c195c9f2ac5d411c303a8_category_name",
+                "query": {
+                  "datasetName": "category_scorecard",
+                  "parameters": [
+                    {
+                      "name": "category_name",
+                      "keyword": "category_name"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Category"
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "category_name",
+                    "queryName": "dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661c95c195c9f2ac5d411c303a8_category_name"
+                  },
+                  {
+                    "parameterName": "category_name",
+                    "queryName": "parameter_dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661c95c195c9f2ac5d411c303a8_category_name"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "sentiment_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661c95c195c9f2ac5d411c303a8_sentiment",
+                "query": {
+                  "datasetName": "category_scorecard",
+                  "fields": [
+                    {
+                      "name": "sentiment",
+                      "expression": "`sentiment`"
+                    },
+                    {
+                      "name": "sentiment_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661c95c195c9f2ac5d411c303a8_sentiment",
+                "query": {
+                  "datasetName": "category_scorecard",
+                  "parameters": [
+                    {
+                      "name": "sentiment",
+                      "keyword": "sentiment"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Sentiment"
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "sentiment",
+                    "queryName": "dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661c95c195c9f2ac5d411c303a8_sentiment"
+                  },
+                  {
+                    "parameterName": "sentiment",
+                    "queryName": "parameter_dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661c95c195c9f2ac5d411c303a8_sentiment"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "tag_tier_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661d27e1d4da812042bf77349c0_tag_tier",
+                "query": {
+                  "datasetName": "tag_strategy",
+                  "fields": [
+                    {
+                      "name": "tag_tier",
+                      "expression": "`tag_tier`"
+                    },
+                    {
+                      "name": "tag_tier_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661d27e1d4da812042bf77349c0_tag_tier",
+                "query": {
+                  "datasetName": "tag_strategy",
+                  "parameters": [
+                    {
+                      "name": "tag_tier",
+                      "keyword": "tag_tier"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Tag Tier"
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "tag_tier",
+                    "queryName": "dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661d27e1d4da812042bf77349c0_tag_tier"
+                  },
+                  {
+                    "parameterName": "tag_tier",
+                    "queryName": "parameter_dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661d27e1d4da812042bf77349c0_tag_tier"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "channel_tier_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661dbdf15ec90fa55681251da86_channel_tier",
+                "query": {
+                  "datasetName": "channel_power",
+                  "fields": [
+                    {
+                      "name": "channel_tier",
+                      "expression": "`channel_tier`"
+                    },
+                    {
+                      "name": "channel_tier_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661dbdf15ec90fa55681251da86_channel_tier",
+                "query": {
+                  "datasetName": "channel_power",
+                  "parameters": [
+                    {
+                      "name": "channel_tier",
+                      "keyword": "channel_tier"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Channel Tier"
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "channel_tier",
+                    "queryName": "dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661dbdf15ec90fa55681251da86_channel_tier"
+                  },
+                  {
+                    "parameterName": "channel_tier",
+                    "queryName": "parameter_dashboards/01f144aa31041d56abaa55fb3b99377b/datasets/01f14661dbdf15ec90fa55681251da86_channel_tier"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "channel_intel",
+      "displayName": "Channel Intelligence",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Channel Intelligence & Leaderboard Analysis"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "tier_pie",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "channel_power",
+                  "fields": [
+                    {
+                      "name": "count(channel_key)",
+                      "expression": "COUNT(`channel_key`)"
+                    },
+                    {
+                      "name": "channel_tier",
+                      "expression": "`channel_tier`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Channel Tier Distribution"
+              },
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "count(channel_key)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Channels"
+                },
+                "color": {
+                  "fieldName": "channel_tier",
+                  "displayName": "Tier",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 4,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "power_pie",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "channel_power",
+                  "fields": [
+                    {
+                      "name": "count(channel_key)",
+                      "expression": "COUNT(`channel_key`)"
+                    },
+                    {
+                      "name": "power_tier",
+                      "expression": "`power_tier`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Power Tier Distribution"
+              },
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "count(channel_key)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Channels"
+                },
+                "color": {
+                  "fieldName": "power_tier",
+                  "displayName": "Power Tier",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 1,
+            "width": 4,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "power_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "channel_power",
+                  "fields": [
+                    {
+                      "name": "min(power_rank)",
+                      "expression": "MIN(`power_rank`)"
+                    },
+                    {
+                      "name": "channel_title",
+                      "expression": "`channel_title`"
+                    },
+                    {
+                      "name": "power_tier",
+                      "expression": "`power_tier`"
+                    },
+                    {
+                      "name": "avg(consistency_score)",
+                      "expression": "AVG(`consistency_score`)"
+                    },
+                    {
+                      "name": "avg(leaderboard_pct)",
+                      "expression": "AVG(`leaderboard_pct`)"
+                    },
+                    {
+                      "name": "sum(lifetime_views)",
+                      "expression": "SUM(`lifetime_views`)"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`power_rank` <= 20"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "rowsPerPage": 20,
+              "frame": {
+                "showTitle": true,
+                "title": "Channel Power Rankings (Top 20)"
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "min(power_rank)",
+                    "displayName": "#"
+                  },
+                  {
+                    "fieldName": "channel_title",
+                    "displayName": "Channel"
+                  },
+                  {
+                    "fieldName": "power_tier",
+                    "displayName": "Power Tier"
+                  },
+                  {
+                    "fieldName": "avg(consistency_score)",
+                    "displayName": "Consistency %"
+                  },
+                  {
+                    "fieldName": "avg(leaderboard_pct)",
+                    "displayName": "Leaderboard %"
+                  },
+                  {
+                    "fieldName": "sum(lifetime_views)",
+                    "displayName": "Lifetime Views"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 12,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "top15_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "channel_power",
+                  "fields": [
+                    {
+                      "name": "avg(power_score)",
+                      "expression": "AVG(`power_score`)"
+                    },
+                    {
+                      "name": "channel_title",
+                      "expression": "`channel_title`"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`power_rank` <= 15"
+                    }
+                  ],
+                  "disaggregated": false,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "AVG(`power_score`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Top 15 by Power Score"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "avg(power_score)",
+                  "displayName": "Power Score",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "channel_title",
+                  "displayName": "Channel",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "measure",
+                      "measure": {
+                        "fieldName": "avg(power_score)"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 1,
+            "width": 4,
+            "height": 5
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "monopoly_analysis",
+      "displayName": "Trending Page Diversity",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Trending Page Diversity & Monopoly Detection"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "diversity_line",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "leaderboard_monopoly",
+                  "fields": [
+                    {
+                      "name": "trending_date",
+                      "expression": "`trending_date`"
+                    },
+                    {
+                      "name": "avg(top1_share_pct)",
+                      "expression": "AVG(`top1_share_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Top Channel Dominance Over Time"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "trending_date",
+                  "displayName": "Date",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg(top1_share_pct)",
+                  "displayName": "Top 1 Share %",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 8,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "monopoly_pie",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "leaderboard_monopoly",
+                  "fields": [
+                    {
+                      "name": "count(trending_date)",
+                      "expression": "COUNT(`trending_date`)"
+                    },
+                    {
+                      "name": "monopoly_flag",
+                      "expression": "`monopoly_flag`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Monopoly Classification"
+              },
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "count(trending_date)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Days"
+                },
+                "color": {
+                  "fieldName": "monopoly_flag",
+                  "displayName": "Classification",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 1,
+            "width": 4,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_avg_diversity",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "leaderboard_monopoly",
+                  "fields": [
+                    {
+                      "name": "avg(view_concentration)",
+                      "expression": "AVG(`view_concentration`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "format": {
+                "numberFormat": {
+                  "formatType": "numeral",
+                  "format": "0.0"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Avg View Concentration"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg(view_concentration)",
+                  "displayName": "Top÷Bottom Ratio"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_high_monopoly",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "high_monopoly_count",
+                  "fields": [
+                    {
+                      "name": "count(trending_date)",
+                      "expression": "COUNT(`trending_date`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "High Monopoly Days"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "count(trending_date)",
+                  "displayName": "Days"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "diversity_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "leaderboard_monopoly",
+                  "fields": [
+                    {
+                      "name": "trending_date",
+                      "expression": "`trending_date`"
+                    },
+                    {
+                      "name": "avg(top1_share_pct)",
+                      "expression": "AVG(`top1_share_pct`)"
+                    },
+                    {
+                      "name": "avg(view_concentration)",
+                      "expression": "AVG(`view_concentration`)"
+                    },
+                    {
+                      "name": "min(unique_channels)",
+                      "expression": "MIN(`unique_channels`)"
+                    },
+                    {
+                      "name": "monopoly_flag",
+                      "expression": "`monopoly_flag`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Most Dominated Days"
+              },
+              "version": 2,
+              "rowsPerPage": 15,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "trending_date",
+                    "displayName": "Date"
+                  },
+                  {
+                    "fieldName": "avg(top1_share_pct)",
+                    "displayName": "Top 1 Share %"
+                  },
+                  {
+                    "fieldName": "avg(view_concentration)",
+                    "displayName": "Concentration"
+                  },
+                  {
+                    "fieldName": "min(unique_channels)",
+                    "displayName": "Unique Channels"
+                  },
+                  {
+                    "fieldName": "monopoly_flag",
+                    "displayName": "Classification"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 7,
+            "width": 9,
+            "height": 7
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "canvasBackgroundColor": {
+        "light": "#F8FAFC",
+        "dark": "#0F172A"
+      },
+      "widgetBackgroundColor": {
+        "light": "#FFFFFF",
+        "dark": "#1E293B"
+      },
+      "widgetBorderColor": {
+        "light": "#E2E8F0",
+        "dark": "#334155"
+      },
+      "fontColor": {
+        "light": "#1E293B",
+        "dark": "#F1F5F9"
+      },
+      "selectionColor": {
+        "light": "#6366F1",
+        "dark": "#818CF8"
+      },
+      "visualizationColors": [
+        "#6366F1",
+        "#F59E0B",
+        "#10B981",
+        "#F43F5E",
+        "#06B6D4",
+        "#F97316",
+        "#8B5CF6",
+        "#84CC16",
+        "#EC4899",
+        "#14B8A6"
+      ],
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED",
+      "fontFamily": "Verdana"
+    },
+    "applyModeEnabled": false
+  }
+}
