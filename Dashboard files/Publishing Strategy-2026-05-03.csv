@@ -1,0 +1,8 @@
+day_rank,day_name,day_type,is_weekend,trending_entries,unique_videos,total_views,avg_views,avg_engagement_rate,avg_like_ratio,avg_days_to_trend,view_score,engagement_score,speed_score,composite_score,recommendation,_bc_ingested_at
+1,Sat,Weekend,TRUE,5993,4514,13494560180,2251720,4.153,93.443,14.6,94.5,100,100,97.8,Best Days,2026-05-02 19:45:44
+2,Fri,Weekday,FALSE,5793,4505,13395761387,2312405,4.127,93.339,15.3,93.8,99.4,86.8,94,Best Days,2026-05-02 19:45:44
+3,Sun,Weekend,TRUE,5794,4476,13143201799,2268416,4.083,93.42,15.6,92,98.3,81.1,91.5,Good,2026-05-02 19:45:44
+4,Wed,Weekday,FALSE,5791,4407,13996254920,2416898,4.005,93.151,16.1,98,96.4,71.7,90.9,Good,2026-05-02 19:45:44
+5,Thu,Weekday,FALSE,5793,4403,14236025586,2457453,4.058,93.204,16.9,99.7,97.7,56.6,88.2,Good,2026-05-02 19:45:44
+6,Tue,Weekday,FALSE,5942,4633,14285020794,2404076,3.952,93.207,19.3,100,95.2,11.3,76.1,Avoid,2026-05-02 19:45:44
+7,Mon,Weekday,FALSE,5793,4418,13997352110,2416253,3.961,93.409,19.9,98,95.4,0,72.6,Avoid,2026-05-02 19:45:44
